@@ -40,14 +40,32 @@
                 return Uint8Array.from(window.atob(base64), (character) => character.charCodeAt(0));
             };
 
+            const serverKey = toUint8Array(VAPID_PUBLIC_KEY);
+
+            const isSubscribedWithServerKey = (subscription) => {
+                const subscribedKey = subscription.options?.applicationServerKey;
+
+                return subscribedKey instanceof ArrayBuffer
+                    && new Uint8Array(subscribedKey).every((byte, index) => byte === serverKey[index])
+                    && subscribedKey.byteLength === serverKey.length;
+            };
+
+            // A subscription made with an older VAPID key is rejected by the push service: replace it.
+            const currentSubscription = async (pushManager) => {
+                const existing = await pushManager.getSubscription();
+
+                if (existing && isSubscribedWithServerKey(existing)) {
+                    return existing;
+                }
+
+                await existing?.unsubscribe();
+
+                return pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: serverKey });
+            };
+
             const saveSubscription = async () => {
                 const registration = await navigator.serviceWorker.ready;
-
-                const subscription = await registration.pushManager.getSubscription()
-                    ?? await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: toUint8Array(VAPID_PUBLIC_KEY),
-                    });
+                const subscription = await currentSubscription(registration.pushManager);
 
                 const response = await fetch(SUBSCRIBE_URL, {
                     method: 'POST',
