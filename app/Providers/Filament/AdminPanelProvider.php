@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -10,6 +11,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Contracts\View\View;
@@ -33,6 +35,15 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(asset('pwa/icons/icon-192.png'))
             ->colors([
                 'primary' => Color::Amber,
+            ])
+            // Native notification bell next to the user menu (new order requests).
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
+            ->userMenuItems([
+                Action::make('enablePushNotifications')
+                    ->label('Attiva notifiche push')
+                    ->icon(Heroicon::OutlinedBellAlert)
+                    ->alpineClickHandler('window.leonfruttaEnablePush?.()'),
             ])
             // Installable app (PWA): manifest, iPhone tags, no zoom and install banner.
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('pwa.head'))

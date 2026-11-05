@@ -13,19 +13,20 @@ use Throwable;
 use function Illuminate\Support\defer;
 
 /**
- * Notifies every administrator device subscribed to push notifications.
+ * Tells every administrator about the new order: in the Filament bell and,
+ * on the devices where it is enabled, with a push notification.
  *
  * Sending is deferred until the response has been returned to the customer:
  * the order is confirmed immediately, no queue worker or scheduler is needed,
- * and a push failure can never make the order request fail.
+ * and a notification failure can never make the order request fail.
  */
-class SendNewOrderPushNotification
+class NotifyAdministratorsOfNewOrder
 {
     public function handle(OrderSubmitted $event): void
     {
         defer(function () use ($event): void {
             try {
-                Notification::send($this->subscribedAdministrators(), new NewOrderReceived($event->order));
+                Notification::send($this->administrators(), new NewOrderReceived($event->order));
             } catch (Throwable $exception) {
                 report($exception);
             }
@@ -35,13 +36,11 @@ class SendNewOrderPushNotification
     /**
      * @return Collection<int, User>
      */
-    private function subscribedAdministrators(): Collection
+    private function administrators(): Collection
     {
         $adminPanel = Filament::getPanel('admin');
 
         return User::query()
-            ->whereHas('pushSubscriptions')
-            ->with('pushSubscriptions')
             ->get()
             ->filter(fn (User $user): bool => $user->canAccessPanel($adminPanel))
             ->values()

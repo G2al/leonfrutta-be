@@ -4,7 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Events\OrderSubmitted;
 use App\Filament\Resources\Orders\OrderResource;
-use App\Listeners\SendNewOrderPushNotification;
+use App\Listeners\NotifyAdministratorsOfNewOrder;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\NewOrderReceived;
@@ -29,10 +29,14 @@ class PushNotificationsTest extends TestCase
         'content_encoding' => 'aes128gcm',
     ];
 
-    private function subscribedUser(string $email): User
+    private function admin(string $email = 'admin@leonfrutta.it'): User
     {
-        $user = User::factory()->create(['email' => $email]);
-        $user->updatePushSubscription('https://push.example.com/'.$email, 'public-key', 'auth-token', 'aes128gcm');
+        return User::factory()->create(['email' => $email]);
+    }
+
+    private function withPushDevice(User $user): User
+    {
+        $user->updatePushSubscription("https://push.example.com/{$user->id}", 'public-key', 'auth-token', 'aes128gcm');
 
         return $user;
     }
@@ -49,29 +53,50 @@ class PushNotificationsTest extends TestCase
     }
 
     #[Test]
-    public function a_new_order_from_the_api_notifies_the_subscribed_administrators(): void
+    public function a_new_order_from_the_api_notifies_every_administrator(): void
     {
         Notification::fake();
         $this->withoutDefer();
 
-        $admin = $this->subscribedUser('admin@leonfrutta.it');
-        $adminWithoutDevices = User::factory()->create(['email' => 'altro@leonfrutta.it']);
-        $outsider = $this->subscribedUser('someone@example.com');
+        $adminWithPhone = $this->withPushDevice($this->admin());
+        $adminWithoutPhone = $this->admin('altro@leonfrutta.it');
+        $outsider = $this->withPushDevice($this->admin('someone@example.com'));
 
         $this->postJson('/api/v1/orders', $this->orderPayload())->assertCreated();
 
         $order = Order::sole();
+        $isThisOrder = fn (NewOrderReceived $notification): bool => $notification->order->is($order);
 
-        Notification::assertSentTo($admin, NewOrderReceived::class, fn (NewOrderReceived $notification): bool => $notification->order->is($order));
-        Notification::assertNotSentTo($adminWithoutDevices, NewOrderReceived::class);
+        // Bell for everybody, push only where a device has been enabled.
+        Notification::assertSentTo($adminWithPhone, NewOrderReceived::class, fn (NewOrderReceived $notification, array $channels): bool => $isThisOrder($notification)
+            && $channels === ['database', WebPushChannel::class]);
+        Notification::assertSentTo($adminWithoutPhone, NewOrderReceived::class, fn (NewOrderReceived $notification, array $channels): bool => $isThisOrder($notification)
+            && $channels === ['database']);
         Notification::assertNotSentTo($outsider, NewOrderReceived::class);
     }
 
     #[Test]
-    public function the_order_is_saved_even_when_sending_the_push_fails(): void
+    public function the_new_order_appears_in_the_filament_notification_bell(): void
     {
         $this->withoutDefer();
-        $this->subscribedUser('admin@leonfrutta.it');
+        $admin = $this->admin();
+
+        $this->postJson('/api/v1/orders', $this->orderPayload())->assertCreated();
+
+        $notification = $admin->notifications()->sole();
+
+        $this->assertSame('filament', $notification->data['format']);
+        $this->assertSame('Nuova richiesta d\'ordine', $notification->data['title']);
+        $this->assertSame('Pizzeria Da Mario · Mario Rossi', $notification->data['body']);
+        $this->assertSame(OrderResource::getUrl('view', ['record' => Order::sole()], panel: 'admin'), $notification->data['actions'][0]['url']);
+        $this->assertNull($notification->read_at);
+    }
+
+    #[Test]
+    public function the_order_is_saved_even_when_notifications_fail(): void
+    {
+        $this->withoutDefer();
+        $this->admin();
 
         Notification::shouldReceive('send')->andThrow(new \RuntimeException('Push service unreachable'));
 
@@ -85,7 +110,7 @@ class PushNotificationsTest extends TestCase
     {
         Event::fake();
 
-        Event::assertListening(OrderSubmitted::class, SendNewOrderPushNotification::class);
+        Event::assertListening(OrderSubmitted::class, NotifyAdministratorsOfNewOrder::class);
     }
 
     #[Test]
@@ -98,8 +123,6 @@ class PushNotificationsTest extends TestCase
             'message' => "10 kg di pomodori\n5 kg di patate",
         ]);
         $notification = new NewOrderReceived($order);
-
-        $this->assertSame([WebPushChannel::class], $notification->via(new User));
 
         $message = $notification->toWebPush(new User, $notification);
         $payload = $message->toArray();
@@ -115,7 +138,7 @@ class PushNotificationsTest extends TestCase
     #[Test]
     public function an_administrator_can_register_the_device_for_notifications(): void
     {
-        $admin = User::factory()->create(['email' => 'admin@leonfrutta.it']);
+        $admin = $this->admin();
 
         $this->actingAs($admin)
             ->postJson('/admin/push-subscriptions', self::SUBSCRIPTION)
@@ -134,7 +157,7 @@ class PushNotificationsTest extends TestCase
     {
         $this->postJson('/admin/push-subscriptions', self::SUBSCRIPTION)->assertUnauthorized();
 
-        $this->actingAs(User::factory()->create(['email' => 'someone@example.com']))
+        $this->actingAs($this->admin('someone@example.com'))
             ->postJson('/admin/push-subscriptions', self::SUBSCRIPTION)
             ->assertForbidden();
 
@@ -144,7 +167,7 @@ class PushNotificationsTest extends TestCase
     #[Test]
     public function invalid_subscriptions_are_rejected(): void
     {
-        $this->actingAs(User::factory()->create(['email' => 'admin@leonfrutta.it']))
+        $this->actingAs($this->admin())
             ->postJson('/admin/push-subscriptions', [
                 'endpoint' => 'http://not-https.example.com/push',
                 'keys' => [],
@@ -155,18 +178,21 @@ class PushNotificationsTest extends TestCase
     }
 
     #[Test]
-    public function the_panel_offers_notifications_only_to_logged_in_administrators(): void
+    public function the_panel_has_the_notification_bell_and_the_push_menu_item_without_popups(): void
     {
         config(['webpush.vapid.public_key' => 'BPublicVapidKeyForTests']);
 
-        $this->get('/admin/login')->assertOk()->assertDontSee('id="lf-push-card"', escape: false);
+        $this->get('/admin/login')->assertOk()->assertDontSee('leonfruttaEnablePush');
 
-        $this->actingAs(User::factory()->create(['email' => 'admin@leonfrutta.it']))
+        $this->actingAs($this->admin())
             ->get('/admin')
             ->assertOk()
-            ->assertSee('id="lf-push-card"', escape: false)
+            ->assertSee('fi-topbar-database-notifications-btn', escape: false)
+            ->assertSee('Attiva notifiche push')
+            ->assertSee('window.leonfruttaEnablePush = async', escape: false)
             ->assertSee('BPublicVapidKeyForTests')
-            ->assertSee(Js::from(route('push-subscriptions.store'))->toHtml(), escape: false);
+            ->assertSee(Js::from(route('push-subscriptions.store'))->toHtml(), escape: false)
+            ->assertDontSee('lf-push-card');
     }
 
     #[Test]
