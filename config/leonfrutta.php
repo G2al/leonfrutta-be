@@ -23,6 +23,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Installable admin app (PWA)
+    |--------------------------------------------------------------------------
+    |
+    | Values of the web app manifest that make the admin panel installable on
+    | Android (install button) and iPhone (Add to Home Screen).
+    |
+    */
+
+    'pwa' => [
+        'name' => env('LEONFRUTTA_PWA_NAME', 'LeonFrutta Admin'),
+        'short_name' => env('LEONFRUTTA_PWA_SHORT_NAME', 'LeonFrutta'),
+        'description' => 'Gestione delle richieste d\'ordine LeonFrutta.',
+        'theme_color' => '#166534',
+        'background_color' => '#ffffff',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Public order API
     |--------------------------------------------------------------------------
     */
