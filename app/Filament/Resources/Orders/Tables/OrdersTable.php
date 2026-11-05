@@ -6,12 +6,14 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Filament\Resources\Orders\Actions\CancelOrderAction;
 use App\Filament\Resources\Orders\Actions\ConfirmOrderAction;
+use App\Filament\Resources\Orders\Actions\DeleteOrderAction;
 use App\Filament\Resources\Orders\Actions\EditAmountAction;
 use App\Filament\Resources\Orders\Actions\MarkAsPaidAction;
 use App\Filament\Resources\Orders\Actions\MarkAsUnpaidAction;
 use App\Filament\Resources\Orders\Actions\OpenWhatsAppAction;
 use App\Models\Order;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Support\Facades\FilamentTimezone;
@@ -89,7 +91,16 @@ class OrdersTable
                     EditAmountAction::make(),
                     MarkAsUnpaidAction::make(),
                     CancelOrderAction::make(),
+                    DeleteOrderAction::make(),
                 ]),
+            ])
+            ->toolbarActions([
+                DeleteBulkAction::make()
+                    ->label('Elimina selezionate')
+                    ->modalHeading('Eliminare definitivamente le richieste selezionate?')
+                    ->modalDescription('Le richieste verranno cancellate per sempre, sparendo dagli elenchi e dagli incassi. L\'operazione non si può annullare.')
+                    ->modalSubmitActionLabel('Elimina definitivamente')
+                    ->modalCancelActionLabel('Indietro'),
             ])
             ->emptyStateHeading('Nessuna richiesta')
             ->emptyStateDescription('Le richieste inviate dai clienti compariranno qui.');

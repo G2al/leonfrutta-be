@@ -16,9 +16,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Order requests are read-only for the administrator: they arrive from the
- * public API and only move through the confirm / cancel actions. They are
- * never created, edited or deleted from the panel, to keep the full history.
+ * Order requests arrive from the public API: the administrator never creates
+ * or edits them by hand, they only move through the confirm / cancel /
+ * payment actions. They can be deleted permanently when no longer needed.
  */
 class OrderResource extends Resource
 {
@@ -75,16 +75,6 @@ class OrderResource extends Resource
     }
 
     public static function canEdit(Model $record): bool
-    {
-        return false;
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return false;
-    }
-
-    public static function canDeleteAny(): bool
     {
         return false;
     }

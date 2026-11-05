@@ -1,5 +1,5 @@
 /*
- * LeonFrutta Admin service worker.
+ * Admin Leonfrutta service worker.
  *
  * The admin panel is private and always live, so pages and Livewire requests
  * are never cached: they always go to the network. The worker only keeps a

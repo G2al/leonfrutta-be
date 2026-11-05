@@ -32,8 +32,9 @@ return [
     */
 
     'pwa' => [
-        'name' => env('LEONFRUTTA_PWA_NAME', 'LeonFrutta Admin'),
-        'short_name' => env('LEONFRUTTA_PWA_SHORT_NAME', 'LeonFrutta'),
+        'name' => env('LEONFRUTTA_PWA_NAME', 'Admin Leonfrutta'),
+        // Shown under the icon on the home screen (Android and iPhone).
+        'short_name' => env('LEONFRUTTA_PWA_SHORT_NAME', 'Admin Leonfrutta'),
         'description' => 'Gestione delle richieste d\'ordine LeonFrutta.',
         // Dark background of the Filament panel (gray-950), the same as the app icons.
         'theme_color' => '#09090b',

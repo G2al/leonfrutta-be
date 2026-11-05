@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Orders\Pages;
 
 use App\Filament\Resources\Orders\Actions\CancelOrderAction;
 use App\Filament\Resources\Orders\Actions\ConfirmOrderAction;
+use App\Filament\Resources\Orders\Actions\DeleteOrderAction;
 use App\Filament\Resources\Orders\Actions\EditAmountAction;
 use App\Filament\Resources\Orders\Actions\MarkAsPaidAction;
 use App\Filament\Resources\Orders\Actions\MarkAsUnpaidAction;
@@ -24,6 +25,7 @@ class ViewOrder extends ViewRecord
             EditAmountAction::make(),
             MarkAsUnpaidAction::make(),
             CancelOrderAction::make(),
+            DeleteOrderAction::make(),
         ];
     }
 }

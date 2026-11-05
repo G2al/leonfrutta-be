@@ -319,15 +319,54 @@ class OrderAdminPanelTest extends TestCase
     }
 
     #[Test]
-    public function orders_cannot_be_created_edited_or_deleted_from_the_panel(): void
+    public function orders_cannot_be_created_or_edited_by_hand(): void
     {
         $order = Order::factory()->create();
 
         $this->assertFalse(OrderResource::canCreate());
         $this->assertFalse(OrderResource::canEdit($order));
-        $this->assertFalse(OrderResource::canDelete($order));
-        $this->assertFalse(OrderResource::canDeleteAny());
         $this->assertFalse(OrderResource::hasPage('create'));
         $this->assertFalse(OrderResource::hasPage('edit'));
+    }
+
+    #[Test]
+    public function the_admin_can_permanently_delete_an_order_from_its_detail_page(): void
+    {
+        $order = Order::factory()->paid()->create();
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(ViewOrder::class, ['record' => $order->getKey()])
+            ->assertActionVisible('delete')
+            ->callAction('delete')
+            ->assertNotified('Richiesta eliminata')
+            ->assertRedirect(OrderResource::getUrl('index'));
+
+        $this->assertModelMissing($order);
+        $this->getJson("/api/v1/orders/{$order->tracking_token}")->assertNotFound();
+    }
+
+    #[Test]
+    public function the_admin_can_delete_orders_from_the_table_in_any_status(): void
+    {
+        $orders = collect([
+            Order::factory()->create(),
+            Order::factory()->confirmed()->create(),
+            Order::factory()->cancelled()->create(),
+        ]);
+        $kept = Order::factory()->create();
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(ListOrders::class)
+            ->callAction(TestAction::make('delete')->table($orders->first()))
+            ->assertNotified('Richiesta eliminata');
+
+        Livewire::test(ListOrders::class)
+            ->selectTableRecords($orders->skip(1)->pluck('id')->all())
+            ->callAction(TestAction::make('delete')->table()->bulk());
+
+        $orders->each(fn (Order $order) => $this->assertModelMissing($order));
+        $this->assertModelExists($kept);
     }
 }

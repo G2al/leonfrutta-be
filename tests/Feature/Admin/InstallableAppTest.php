@@ -20,8 +20,8 @@ class InstallableAppTest extends TestCase
             ->assertOk()
             ->assertHeader('Content-Type', 'application/manifest+json')
             ->assertJson([
-                'name' => 'LeonFrutta Admin',
-                'short_name' => 'LeonFrutta',
+                'name' => 'Admin Leonfrutta',
+                'short_name' => 'Admin Leonfrutta',
                 'start_url' => '/admin',
                 'scope' => '/',
                 'display' => 'standalone',
@@ -71,6 +71,7 @@ class InstallableAppTest extends TestCase
             ->assertOk()
             ->assertSee('<link rel="manifest" href="'.route('pwa.manifest').'">', escape: false)
             ->assertSee('<meta name="apple-mobile-web-app-capable" content="yes">', escape: false)
+            ->assertSee('<meta name="apple-mobile-web-app-title" content="Admin Leonfrutta">', escape: false)
             ->assertSee('apple-touch-icon.png')
             ->assertSee('maximum-scale=1, user-scalable=no', escape: false)
             ->assertSee("navigator.serviceWorker.register('/sw.js'", escape: false)
