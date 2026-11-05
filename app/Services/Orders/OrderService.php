@@ -3,6 +3,9 @@
 namespace App\Services\Orders;
 
 use App\Enums\OrderStatus;
+use App\Events\OrderCancelled;
+use App\Events\OrderConfirmed;
+use App\Events\OrderPaid;
 use App\Events\OrderSubmitted;
 use App\Exceptions\OrderOperationNotAllowedException;
 use App\Models\Order;
@@ -50,13 +53,17 @@ class OrderService
     {
         $amount = $this->normalizeAmount($amount);
 
-        return $this->changeLocked($order, function (Order $lockedOrder) use ($amount): void {
+        $order = $this->changeLocked($order, function (Order $lockedOrder) use ($amount): void {
             $this->ensureCanTransition($lockedOrder, OrderStatus::Confirmed);
 
             $lockedOrder->status = OrderStatus::Confirmed;
             $lockedOrder->amount = $amount;
             $lockedOrder->confirmed_at = now();
         });
+
+        OrderConfirmed::dispatch($order);
+
+        return $order;
     }
 
     /**
@@ -64,12 +71,16 @@ class OrderService
      */
     public function cancel(Order $order): Order
     {
-        return $this->changeLocked($order, function (Order $lockedOrder): void {
+        $order = $this->changeLocked($order, function (Order $lockedOrder): void {
             $this->ensureCanTransition($lockedOrder, OrderStatus::Cancelled);
 
             $lockedOrder->status = OrderStatus::Cancelled;
             $lockedOrder->cancelled_at = now();
         });
+
+        OrderCancelled::dispatch($order);
+
+        return $order;
     }
 
     /**
@@ -93,13 +104,17 @@ class OrderService
      */
     public function markAsPaid(Order $order): Order
     {
-        return $this->changeLocked($order, function (Order $lockedOrder): void {
+        $order = $this->changeLocked($order, function (Order $lockedOrder): void {
             if (! $lockedOrder->canBeMarkedAsPaid()) {
                 throw OrderOperationNotAllowedException::cannotBeMarkedAsPaid($lockedOrder);
             }
 
             $lockedOrder->paid_at = now();
         });
+
+        OrderPaid::dispatch($order);
+
+        return $order;
     }
 
     /**

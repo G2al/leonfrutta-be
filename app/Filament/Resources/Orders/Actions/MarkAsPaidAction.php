@@ -29,7 +29,7 @@ class MarkAsPaidAction extends Action
             ->requiresConfirmation()
             ->modalHeading('Segnare la richiesta come pagata?')
             ->modalDescription(fn (Order $record): string => sprintf(
-                'Registra l\'incasso di %s da %s (%s). Dopo il pagamento l\'importo non è più modificabile.',
+                'Registra l\'incasso di %s da %s (%s). Il cliente riceverà in automatico la conferma del pagamento su WhatsApp e l\'importo non sarà più modificabile.',
                 Number::currency((float) $record->amount, in: 'EUR', locale: 'it'),
                 $record->full_name,
                 $record->business_name,

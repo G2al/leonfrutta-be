@@ -28,7 +28,7 @@ class CancelOrderAction extends Action
             ->requiresConfirmation()
             ->modalHeading('Annullare la richiesta?')
             ->modalDescription(fn (Order $record): string => "La richiesta di {$record->full_name} ({$record->business_name}) passerà allo stato \"Annullato\". "
-                .'L\'operazione non può essere annullata e il cliente non verrà avvisato automaticamente.')
+                .'L\'operazione non può essere annullata e il cliente riceverà in automatico un messaggio WhatsApp.')
             ->modalSubmitActionLabel('Annulla richiesta')
             ->modalCancelActionLabel('Indietro')
             ->action(function (Order $record, OrderService $orderService): void {

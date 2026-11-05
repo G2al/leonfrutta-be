@@ -4,30 +4,43 @@ namespace App\Services\WhatsApp;
 
 use App\Models\Order;
 use Illuminate\Support\Number;
-use Illuminate\Support\Str;
 
 /**
- * Composes the prefilled WhatsApp text sent to a customer once their order
- * request is confirmed. The order text is shortened so the wa.me URL stays
- * at a size every browser and WhatsApp client can handle.
+ * Texts of the automatic WhatsApp messages sent to the customer at every
+ * step of the order: received, confirmed, paid, cancelled.
  */
 class OrderWhatsAppMessage
 {
     public function __construct(
         private readonly string $companyName,
-        private readonly int $maxSummaryLength,
     ) {}
 
-    public function confirmationFor(Order $order): string
+    public function received(Order $order): string
     {
-        $summary = Str::limit(trim($order->message), $this->maxSummaryLength, '…');
+        return "Ciao {$order->first_name}, abbiamo ricevuto la tua richiesta d'ordine n. {$order->getKey()}. "
+            ."Ti risponderemo a breve. {$this->companyName}";
+    }
 
-        $total = $order->amount !== null
-            ? ' Totale: '.Number::currency((float) $order->amount, in: 'EUR', locale: 'it').'.'
-            : '';
+    public function confirmed(Order $order): string
+    {
+        return "Ciao {$order->first_name}, il tuo ordine n. {$order->getKey()} è confermato. "
+            ."Totale: {$this->euro($order)}. Grazie! {$this->companyName}";
+    }
 
-        return "Buongiorno {$order->first_name}, siamo {$this->companyName}. "
-            ."Ti confermiamo la tua richiesta di ordine. Riepilogo: {$summary}.{$total} "
-            .'Per qualsiasi dettaglio possiamo continuare qui su WhatsApp. Grazie!';
+    public function paid(Order $order): string
+    {
+        return "Ciao {$order->first_name}, abbiamo registrato il pagamento di {$this->euro($order)} "
+            ."per l'ordine n. {$order->getKey()}. Grazie! {$this->companyName}";
+    }
+
+    public function cancelled(Order $order): string
+    {
+        return "Ciao {$order->first_name}, la tua richiesta d'ordine n. {$order->getKey()} è stata annullata. "
+            ."Per informazioni puoi rispondere a questo messaggio. {$this->companyName}";
+    }
+
+    private function euro(Order $order): string
+    {
+        return Number::currency((float) $order->amount, in: 'EUR', locale: 'it');
     }
 }

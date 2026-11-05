@@ -31,6 +31,9 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="WAHA_URL" value=""/>
+        <env name="WAHA_API_KEY" value=""/>
+        <env name="WAHA_SESSION" value=""/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>

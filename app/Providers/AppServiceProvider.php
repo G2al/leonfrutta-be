@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\Orders\OrderRevenue;
 use App\Services\Phone\PhoneNumberNormalizer;
 use App\Services\WhatsApp\OrderWhatsAppMessage;
+use App\Services\WhatsApp\WahaClient;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -24,7 +25,14 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(OrderWhatsAppMessage::class, fn (): OrderWhatsAppMessage => new OrderWhatsAppMessage(
             companyName: (string) config('leonfrutta.company_name'),
-            maxSummaryLength: (int) config('leonfrutta.whatsapp.max_summary_length'),
+        ));
+
+        $this->app->singleton(WahaClient::class, fn (): WahaClient => new WahaClient(
+            phoneNumberNormalizer: $this->app->make(PhoneNumberNormalizer::class),
+            baseUrl: config('services.waha.url'),
+            apiKey: config('services.waha.api_key'),
+            session: config('services.waha.session'),
+            timeoutSeconds: (int) config('services.waha.timeout'),
         ));
 
         $this->app->singleton(OrderRevenue::class, fn (): OrderRevenue => new OrderRevenue(

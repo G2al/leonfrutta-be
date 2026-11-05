@@ -6,7 +6,6 @@ use App\Exceptions\InvalidPhoneNumberException;
 use App\Models\Order;
 use App\Services\Phone\PhoneNumberNormalizer;
 use App\Services\WhatsApp\OrderWhatsAppLink;
-use App\Services\WhatsApp\OrderWhatsAppMessage;
 use App\Services\WhatsApp\WhatsAppUrlBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -66,60 +65,18 @@ class WhatsAppUrlBuilderTest extends TestCase
     }
 
     #[Test]
-    public function the_order_confirmation_link_contains_the_prefilled_message(): void
+    public function the_order_chat_link_opens_the_customer_chat(): void
     {
-        $order = new Order([
-            'first_name' => 'Mario',
-            'last_name' => 'Rossi',
-            'business_name' => 'Pizzeria Da Mario',
-            'phone' => '+393331234567',
-            'message' => '10 kg di pomodori',
-        ]);
+        $order = new Order(['phone' => '+393331234567']);
 
-        $link = new OrderWhatsAppLink($this->builder, new OrderWhatsAppMessage('LeonFrutta', maxSummaryLength: 1000));
-
-        $query = parse_url($link->confirmationUrl($order), PHP_URL_QUERY);
-        parse_str($query, $parameters);
-
-        $this->assertStringStartsWith('https://wa.me/393331234567?text=', $link->confirmationUrl($order));
-        $this->assertSame(
-            'Buongiorno Mario, siamo LeonFrutta. Ti confermiamo la tua richiesta di ordine. Riepilogo: 10 kg di pomodori. '
-            .'Per qualsiasi dettaglio possiamo continuare qui su WhatsApp. Grazie!',
-            $parameters['text'],
-        );
-        $this->assertSame('https://wa.me/393331234567', $link->chatUrl($order));
+        $this->assertSame('https://wa.me/393331234567', (new OrderWhatsAppLink($this->builder))->chatUrl($order));
     }
 
     #[Test]
-    public function the_confirmation_message_contains_the_order_total_in_euro(): void
+    public function the_order_chat_link_is_null_when_the_stored_number_is_invalid(): void
     {
-        $order = new Order(['first_name' => 'Mario', 'message' => '10 kg di pomodori']);
-        $order->amount = '1234.5';
+        $order = new Order(['phone' => 'non valido']);
 
-        $message = (new OrderWhatsAppMessage('LeonFrutta', maxSummaryLength: 1000))->confirmationFor($order);
-
-        $this->assertStringContainsString("Riepilogo: 10 kg di pomodori. Totale: 1.234,50\u{a0}€.", $message);
-    }
-
-    #[Test]
-    public function long_order_texts_are_shortened_to_keep_the_url_small(): void
-    {
-        $order = new Order(['first_name' => 'Mario', 'message' => str_repeat('pomodori ', 500)]);
-
-        $message = (new OrderWhatsAppMessage('LeonFrutta', maxSummaryLength: 100))->confirmationFor($order);
-
-        $this->assertLessThan(300, mb_strlen($message));
-        $this->assertStringContainsString('…', $message);
-    }
-
-    #[Test]
-    public function order_links_are_null_when_the_stored_number_is_invalid(): void
-    {
-        $order = new Order(['first_name' => 'Mario', 'phone' => 'non valido', 'message' => 'ciao']);
-
-        $link = new OrderWhatsAppLink($this->builder, new OrderWhatsAppMessage('LeonFrutta', maxSummaryLength: 1000));
-
-        $this->assertNull($link->confirmationUrl($order));
-        $this->assertNull($link->chatUrl($order));
+        $this->assertNull((new OrderWhatsAppLink($this->builder))->chatUrl($order));
     }
 }

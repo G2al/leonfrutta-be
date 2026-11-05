@@ -12,12 +12,10 @@ use App\Filament\Widgets\RevenueOverview;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Orders\OrderRevenue;
-use App\Services\WhatsApp\OrderWhatsAppLink;
 use Filament\Actions\Testing\TestAction;
 use Filament\Http\Middleware\Authenticate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Js;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -113,24 +111,18 @@ class OrderAdminPanelTest extends TestCase
     }
 
     #[Test]
-    public function confirming_an_order_saves_it_and_opens_whatsapp(): void
+    public function confirming_an_order_saves_it_without_opening_whatsapp_in_the_browser(): void
     {
         $order = Order::factory()->create(['phone' => '+393331234567', 'first_name' => 'Mario']);
 
         $this->actingAs($this->admin());
 
-        $component = Livewire::test(ViewOrder::class, ['record' => $order->getKey()])
+        Livewire::test(ViewOrder::class, ['record' => $order->getKey()])
             ->assertActionVisible('confirmOrder')
             ->assertActionHidden('openWhatsApp')
             ->callAction('confirmOrder', data: ['amount' => '45.50'])
-            ->assertHasNoFormErrors();
-
-        $whatsAppUrl = app(OrderWhatsAppLink::class)->confirmationUrl($order->fresh());
-        $this->assertStringStartsWith('https://wa.me/393331234567?text=Buongiorno%20Mario', $whatsAppUrl);
-        $this->assertStringContainsString(rawurlencode('Totale: 45,50'), $whatsAppUrl);
-
-        $component
-            ->assertJs('window.open('.Js::from($whatsAppUrl).', "_blank", "noopener")')
+            ->assertHasNoFormErrors()
+            ->assertNoJs()
             ->assertNotified('Richiesta confermata')
             ->assertActionHidden('confirmOrder')
             ->assertActionHidden('cancelOrder')

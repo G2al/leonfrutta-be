@@ -6,19 +6,13 @@ use App\Exceptions\OrderOperationNotAllowedException;
 use App\Filament\Resources\Orders\Schemas\AmountInput;
 use App\Models\Order;
 use App\Services\Orders\OrderService;
-use App\Services\WhatsApp\OrderWhatsAppLink;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Js;
-use Livewire\Component;
 
 /**
- * Confirms a new order request and opens WhatsApp with a prefilled message.
- *
- * Browsers may block a tab opened after an asynchronous request, so the
- * success notification always carries a persistent "Apri WhatsApp" button:
- * the status is saved either way and the chat is one click away.
+ * Confirms a new order request with its amount. The customer receives the
+ * confirmation automatically on WhatsApp (see SendWhatsAppMessageToCustomer).
  */
 class ConfirmOrderAction extends Action
 {
@@ -32,19 +26,19 @@ class ConfirmOrderAction extends Action
         parent::setUp();
 
         $this
-            ->label('Conferma e apri WhatsApp')
-            ->icon(Heroicon::OutlinedChatBubbleLeftRight)
+            ->label('Conferma ordine')
+            ->icon(Heroicon::OutlinedCheckCircle)
             ->color('success')
             ->visible(fn (Order $record): bool => $record->isNew())
             ->requiresConfirmation()
             ->modalHeading('Confermare la richiesta?')
-            ->modalDescription(fn (Order $record): string => "La richiesta di {$record->full_name} ({$record->business_name}) passerà allo stato \"Confermato\". "
-                .'Subito dopo si aprirà WhatsApp con un messaggio precompilato, comprensivo del totale, da controllare e inviare.')
+            ->modalDescription(fn (Order $record): string => "La richiesta di {$record->full_name} ({$record->business_name}) passerà allo stato \"Confermato\" "
+                .'e il cliente riceverà in automatico la conferma su WhatsApp, con il totale.')
             ->schema([
                 AmountInput::make(),
             ])
-            ->modalSubmitActionLabel('Conferma e apri WhatsApp')
-            ->action(function (array $data, Order $record, OrderService $orderService, OrderWhatsAppLink $whatsAppLink, Component $livewire): void {
+            ->modalSubmitActionLabel('Conferma ordine')
+            ->action(function (array $data, Order $record, OrderService $orderService): void {
                 try {
                     $orderService->confirm($record, $data['amount']);
                 } catch (OrderOperationNotAllowedException $exception) {
@@ -57,35 +51,11 @@ class ConfirmOrderAction extends Action
                     return;
                 }
 
-                $whatsAppUrl = $whatsAppLink->confirmationUrl($record);
-
-                if ($whatsAppUrl === null) {
-                    Notification::make()
-                        ->title('Richiesta confermata')
-                        ->body("Il numero {$record->phone} non è valido per WhatsApp: contatta il cliente in un altro modo.")
-                        ->warning()
-                        ->persistent()
-                        ->send();
-
-                    return;
-                }
-
                 Notification::make()
                     ->title('Richiesta confermata')
-                    ->body('Se WhatsApp non si è aperto automaticamente, usa il pulsante qui sotto.')
+                    ->body('Il messaggio di conferma viene inviato al cliente su WhatsApp.')
                     ->success()
-                    ->persistent()
-                    ->actions([
-                        Action::make('openWhatsApp')
-                            ->label('Apri WhatsApp')
-                            ->icon(Heroicon::OutlinedChatBubbleLeftRight)
-                            ->color('success')
-                            ->button()
-                            ->url($whatsAppUrl, shouldOpenInNewTab: true),
-                    ])
                     ->send();
-
-                $livewire->js('window.open('.Js::from($whatsAppUrl).', "_blank", "noopener")');
             });
     }
 }

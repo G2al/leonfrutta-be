@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    /*
+    | WAHA (self-hosted WhatsApp HTTP API): automatic messages to customers.
+    | Leave WAHA_URL empty to disable sending.
+    */
+    'waha' => [
+        'url' => env('WAHA_URL'),
+        'api_key' => env('WAHA_API_KEY'),
+        'session' => env('WAHA_SESSION'),
+        'timeout' => (int) env('WAHA_TIMEOUT', 15),
+    ],
+
 ];

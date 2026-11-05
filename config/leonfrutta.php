@@ -54,18 +54,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | WhatsApp click-to-chat links (https://wa.me)
+    | WhatsApp numbers (wa.me links and automatic WAHA messages)
     |--------------------------------------------------------------------------
     |
     | default_country_code: prefix applied to numbers typed without one.
-    | max_summary_length:   the order text is shortened inside the prefilled
-    |                       message to keep the wa.me URL at a safe size.
+    | The WAHA connection itself lives in config/services.php.
     |
     */
 
     'whatsapp' => [
         'default_country_code' => env('LEONFRUTTA_WHATSAPP_COUNTRY_CODE', '39'),
-        'max_summary_length' => (int) env('LEONFRUTTA_WHATSAPP_MAX_SUMMARY_LENGTH', 1000),
     ],
 
 ];

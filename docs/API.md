@@ -380,6 +380,19 @@ La configurazione si trova in `config/cors.php`.
 | `LEONFRUTTA_ORDERS_RATE_LIMIT` | `5` | Invii al minuto consentiti per IP |
 | `LEONFRUTTA_ORDERS_TRACKING_RATE_LIMIT` | `60` | Consultazioni al minuto consentite per IP |
 | `LEONFRUTTA_WHATSAPP_COUNTRY_CODE` | `39` | Prefisso aggiunto ai numeri inseriti senza prefisso |
-| `LEONFRUTTA_WHATSAPP_MAX_SUMMARY_LENGTH` | `1000` | Lunghezza massima del testo dell'ordine dentro il messaggio WhatsApp precompilato |
 | `LEONFRUTTA_DISPLAY_TIMEZONE` | `Europe/Rome` | Fuso orario delle date nel pannello admin e dei calcoli degli incassi. Nel database le date sono salvate in UTC |
-| `LEONFRUTTA_COMPANY_NAME` | `LeonFrutta` | Nome mostrato nel pannello e nel messaggio WhatsApp |
+| `LEONFRUTTA_COMPANY_NAME` | `LeonFrutta` | Nome mostrato nel pannello e firma dei messaggi WhatsApp |
+| `WAHA_URL` | vuoto | Indirizzo di WAHA. Se vuoto, i messaggi WhatsApp automatici sono disattivati |
+| `WAHA_API_KEY` | vuoto | Chiave API di WAHA (header `X-Api-Key`) |
+| `WAHA_SESSION` | vuoto | Sessione WhatsApp di WAHA da cui partono i messaggi |
+
+### Messaggi WhatsApp automatici
+
+Con WAHA configurato, il cliente riceve un messaggio WhatsApp sul numero indicato nell'ordine quando:
+
+- invia la richiesta dalla PWA (ricevuta);
+- l'amministratore la conferma (con il totale);
+- l'amministratore la segna come pagata;
+- l'amministratore la annulla.
+
+Il frontend non deve fare nulla: i messaggi partono dal backend dopo aver risposto, e un errore di WAHA non blocca mai l'ordine (viene scritto nei log).
