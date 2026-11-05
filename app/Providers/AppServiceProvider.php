@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(OrderWhatsAppMessage::class, fn (): OrderWhatsAppMessage => new OrderWhatsAppMessage(
             companyName: (string) config('leonfrutta.company_name'),
+            timezone: (string) config('leonfrutta.display_timezone'),
         ));
 
         $this->app->singleton(WahaClient::class, fn (): WahaClient => new WahaClient(

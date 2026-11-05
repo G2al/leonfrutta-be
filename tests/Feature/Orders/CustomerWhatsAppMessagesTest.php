@@ -44,14 +44,15 @@ class CustomerWhatsAppMessagesTest extends TestCase
         Http::fake([self::WAHA_SEND_TEXT_URL => Http::response(['id' => 'message-id'], $status)]);
     }
 
-    private function assertWhatsAppSent(string $chatId, string $textStart): void
+    private function assertWhatsAppSent(string $chatId, string $title, string $detail): void
     {
         Http::assertSent(fn (Request $request): bool => $request->url() === self::WAHA_SEND_TEXT_URL
             && $request->method() === 'POST'
             && $request->hasHeader('X-Api-Key', 'secret-key')
             && $request['session'] === 'leonfrutta'
             && $request['chatId'] === $chatId
-            && str_starts_with($request['text'], $textStart));
+            && str_starts_with($request['text'], $title)
+            && str_contains($request['text'], $detail));
     }
 
     #[Test]
@@ -67,7 +68,7 @@ class CustomerWhatsAppMessagesTest extends TestCase
             'message' => 'Vorrei 10 kg di pomodori.',
         ])->assertCreated();
 
-        $this->assertWhatsAppSent('393331234567@c.us', 'Ciao Mario, abbiamo ricevuto la tua richiesta d\'ordine n. '.Order::sole()->id);
+        $this->assertWhatsAppSent('393331234567@c.us', '🍊 *LeonFrutta*', '🧾 *Richiesta n. '.Order::sole()->id.'*');
     }
 
     #[Test]
@@ -79,7 +80,8 @@ class CustomerWhatsAppMessagesTest extends TestCase
 
         $this->orderService->confirm($order, '45.50');
 
-        $this->assertWhatsAppSent('447911123456@c.us', "Ciao Mario, il tuo ordine n. {$order->id} è confermato. Totale: 45,50");
+        $this->assertWhatsAppSent('447911123456@c.us', '✅ *Ordine confermato!*', "🧾 *Ordine n. {$order->id}*");
+        $this->assertWhatsAppSent('447911123456@c.us', '✅ *Ordine confermato!*', '💶 *Totale: 45,50');
     }
 
     #[Test]
@@ -91,7 +93,7 @@ class CustomerWhatsAppMessagesTest extends TestCase
 
         $this->orderService->markAsPaid($order);
 
-        $this->assertWhatsAppSent('393331234567@c.us', 'Ciao Mario, abbiamo registrato il pagamento di 30,00');
+        $this->assertWhatsAppSent('393331234567@c.us', '💳 *Pagamento ricevuto*', '💶 Importo: *30,00');
     }
 
     #[Test]
@@ -103,7 +105,7 @@ class CustomerWhatsAppMessagesTest extends TestCase
 
         $this->orderService->cancel($order);
 
-        $this->assertWhatsAppSent('393331234567@c.us', "Ciao Mario, la tua richiesta d'ordine n. {$order->id} è stata annullata.");
+        $this->assertWhatsAppSent('393331234567@c.us', '❌ *Richiesta annullata*', "*n. {$order->id}* è stata annullata.");
     }
 
     #[Test]
