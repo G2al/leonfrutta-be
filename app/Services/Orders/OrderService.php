@@ -3,6 +3,7 @@
 namespace App\Services\Orders;
 
 use App\Enums\OrderStatus;
+use App\Events\OrderSubmitted;
 use App\Exceptions\OrderOperationNotAllowedException;
 use App\Models\Order;
 use App\Services\Phone\PhoneNumberNormalizer;
@@ -30,10 +31,14 @@ class OrderService
      */
     public function submit(array $customerRequest): Order
     {
-        return Order::create([
+        $order = Order::create([
             ...$customerRequest,
             'phone' => $this->phoneNumberNormalizer->toE164($customerRequest['phone']),
         ]);
+
+        OrderSubmitted::dispatch($order);
+
+        return $order;
     }
 
     /**

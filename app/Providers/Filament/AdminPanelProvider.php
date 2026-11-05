@@ -37,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             // Installable app (PWA): manifest, iPhone tags, no zoom and install banner.
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('pwa.head'))
             ->renderHook(PanelsRenderHook::BODY_END, fn (): View => view('pwa.install-banner'))
+            ->renderHook(PanelsRenderHook::BODY_END, fn (): View => view('pwa.push-notifications'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
