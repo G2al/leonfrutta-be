@@ -35,8 +35,9 @@ return [
         'name' => env('LEONFRUTTA_PWA_NAME', 'LeonFrutta Admin'),
         'short_name' => env('LEONFRUTTA_PWA_SHORT_NAME', 'LeonFrutta'),
         'description' => 'Gestione delle richieste d\'ordine LeonFrutta.',
-        'theme_color' => '#166534',
-        'background_color' => '#ffffff',
+        // Dark background of the Filament panel (gray-950), the same as the app icons.
+        'theme_color' => '#09090b',
+        'background_color' => '#09090b',
     ],
 
     /*

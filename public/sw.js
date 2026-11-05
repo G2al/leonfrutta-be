@@ -6,7 +6,7 @@
  * static offline page, shown when a page cannot be loaded without connection.
  */
 
-const CACHE_NAME = 'leonfrutta-admin-v1';
+const CACHE_NAME = 'leonfrutta-admin-v2';
 const OFFLINE_URL = '/pwa/offline.html';
 const PRECACHED_URLS = [OFFLINE_URL, '/pwa/icons/icon-192.png'];
 

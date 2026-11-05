@@ -62,7 +62,7 @@
         border-color: rgba(255, 255, 255, 0.1);
     }
 
-    .lf-install__icon { flex: none; width: 48px; height: 48px; border-radius: 12px; }
+    .lf-install__icon { flex: none; width: 48px; height: 48px; border-radius: 12px; background: {{ $pwa['background_color'] }}; }
     .lf-install__body { flex: 1; min-width: 0; }
     .lf-install__title { margin: 0 0 2px; font-weight: 600; font-size: 15px; }
     .lf-install__text { margin: 0; opacity: 0.8; }
@@ -76,7 +76,7 @@
         font: inherit;
         font-weight: 600;
         color: #ffffff;
-        background: {{ $pwa['theme_color'] }};
+        background: var(--primary-600, #d97706);
         cursor: pointer;
     }
 
